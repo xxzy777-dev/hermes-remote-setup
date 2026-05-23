@@ -17,7 +17,8 @@ Write-Host ""
 $existing = Get-NetTCPConnection -LocalPort 22 -ErrorAction SilentlyContinue | Where-Object State -eq Listen
 if ($existing) {
     Write-Host "[OK] SSH already running on port 22" -ForegroundColor Green
-    goto :SHOWINFO
+    Show-ConnectionInfo
+    exit 0
 }
 
 # --- Step 2: Install OpenSSH ---
@@ -93,7 +94,6 @@ while ($svc.Status -ne "Running" -and $retry -lt 3) {
 
 if ($svc.Status -ne "Running") {
     Write-Host "  Service won't start, launching directly..." -ForegroundColor Yellow
-    # Kill any existing sshd
     Get-Process -Name "sshd" -ErrorAction SilentlyContinue | Stop-Process -Force
     Start-Sleep 1
     Start-Process -FilePath "$sshPath\sshd.exe" -WindowStyle Hidden
@@ -122,30 +122,33 @@ if ($listening) {
     exit 1
 }
 
-# --- Show connection info ---
-:SHOWINFO
-$username = [Environment]::UserName
-$computerName = [Environment]::MachineName
-$ips = Get-NetIPAddress -AddressFamily IPv4 | Where-Object { $_.InterfaceAlias -notlike "*Loopback*" -and $_.IPAddress -notlike "169.254.*" }
-
-Write-Host ""
-Write-Host "------------- CONNECTION INFO -------------" -ForegroundColor Cyan
-Write-Host ""
-Write-Host "  Username : $username" -ForegroundColor White
-Write-Host "  IP Addr   :" -ForegroundColor White -NoNewline
-foreach ($ip in $ips) {
-    Write-Host " $($ip.IPAddress)" -ForegroundColor Yellow
-    Write-Host "             " -NoNewline
+function Show-ConnectionInfo {
+    $username = [Environment]::UserName
+    $computerName = [Environment]::MachineName
+    $ips = Get-NetIPAddress -AddressFamily IPv4 | Where-Object { $_.InterfaceAlias -notlike "*Loopback*" -and $_.IPAddress -notlike "169.254.*" }
+    
+    Write-Host ""
+    Write-Host "------------- CONNECTION INFO -------------" -ForegroundColor Cyan
+    Write-Host ""
+    Write-Host "  Username : $username" -ForegroundColor White
+    Write-Host "  IP Addr   :" -ForegroundColor White -NoNewline
+    foreach ($ip in $ips) {
+        Write-Host " $($ip.IPAddress)" -ForegroundColor Yellow
+        Write-Host "             " -NoNewline
+    }
+    Write-Host ""
+    Write-Host "  Port      : 22" -ForegroundColor White
+    Write-Host "  Password  : (your Windows login password)" -ForegroundColor White
+    Write-Host ""
+    Write-Host "Send this info to the technician:" -ForegroundColor Cyan
+    Write-Host "  IP: $($ips[0].IPAddress)" -ForegroundColor Green
+    Write-Host "  User: $username" -ForegroundColor Green
+    Write-Host ""
+    Write-Host "--------------------------------------------" -ForegroundColor Cyan
 }
-Write-Host ""
-Write-Host "  Port      : 22" -ForegroundColor White
-Write-Host "  Password  : (your Windows login password)" -ForegroundColor White
-Write-Host ""
-Write-Host "Send this info to the technician:" -ForegroundColor Cyan
-Write-Host "  IP: $($ips[0].IPAddress)" -ForegroundColor Green
-Write-Host "  User: $username" -ForegroundColor Green
-Write-Host ""
-Write-Host "--------------------------------------------" -ForegroundColor Cyan
+
+Show-ConnectionInfo
+
 Write-Host ""
 Write-Host "Press any key to close..."
 $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
