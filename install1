@@ -103,6 +103,11 @@ $env:UV_PROJECT_ENVIRONMENT = $venvDir
 & $uvExe sync --extra all --index-url https://pypi.mirrors.ustc.edu.cn/simple/
 Pop-Location
 
+# ===================== 在这里加入修复命令 =====================
+Write-Step "Installing edge-tts fix (prevent startup freeze)"
+& "$venvDir\Scripts\pip.exe" install edge-tts -i https://pypi.mirrors.ustc.edu.cn/simple/
+# ==============================================================
+
 # Verify critical imports
 Write-Step "Verifying installation"
 $venvPython = Join-Path $venvDir "Scripts\python.exe"
