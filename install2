@@ -104,12 +104,13 @@ Write-Step "Installing dependencies (this may take a few minutes)"
 Push-Location $InstallDir
 $env:UV_PROJECT_ENVIRONMENT = $venvDir
 & $uvExe sync --extra all --index-url https://pypi.mirrors.ustc.edu.cn/simple/
-Pop-Location
 
-# ===================== 修复 edge-tts（100% 不报错） =====================
+# ===================== 终极修复：用 uv 安装 edge-tts =====================
 Write-Step "Installing edge-tts fix (prevent startup freeze)"
-& "$venvDir/Scripts/python.exe" -m pip install edge-tts -i https://pypi.mirrors.ustc.edu.cn/simple/
+& $uvExe pip install edge-tts --index-url https://pypi.mirrors.ustc.edu.cn/simple/
 # ==========================================================================
+
+Pop-Location
 
 # Verify critical imports
 Write-Step "Verifying installation"
