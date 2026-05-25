@@ -6,9 +6,8 @@ Hermes Agent Windows Installer
 Installs Hermes Agent on native Windows without WSL.
 #>
 
-# ========== 你要加的命令 已放在最开头 ==========
+# 自动设置 PowerShell 权限
 Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser -Force
-# ==============================================
 
 $ErrorActionPreference = 'Stop'
 
@@ -63,9 +62,9 @@ if (-not (Get-Command git -ErrorAction SilentlyContinue)) {
     Write-Warning "Git not found, installing portable Git"
     $GitZip = Join-Path $env:TEMP "git-portable.zip"
     Invoke-WebRequest -Uri "https://ghfast.top/https://github.com/git-for-windows/git/releases/download/v2.45.1.windows.1/PortableGit-2.45.1-64-bit.zip" -OutFile $GitZip
-    Expand-Archive -Path $GitZip -DestinationPath (Join-Path $env:LOCALAPPDATA "hermes\git") -Force
+    Expand-Archive -Path $GitZip -DestinationPath (Join-Path $env:LOCALAPPDATA "hermes/git") -Force
     Remove-Item $GitZip -Force
-    $env:PATH += ";" + (Join-Path $env:LOCALAPPDATA "hermes\git\cmd")
+    $env:PATH += ";$(Join-Path $env:LOCALAPPDATA "hermes/git/cmd")"
 }
 
 # Clone/update repo
@@ -81,11 +80,11 @@ if (Test-Path (Join-Path $InstallDir ".git")) {
 # Check Python/uv
 Write-Step "Checking Python $RecommendedPython"
 $venvDir = Join-Path $InstallDir "venv"
-$uvExe = Join-Path $env:LOCALAPPDATA "hermes\uv\uv.exe"
+$uvExe = Join-Path $env:LOCALAPPDATA "hermes/uv/uv.exe"
 
 if (-not (Test-Path $uvExe)) {
     Write-Warning "uv not found, installing uv"
-    $UvDir = Join-Path $env:LOCALAPPDATA "hermes\uv"
+    $UvDir = Join-Path $env:LOCALAPPDATA "hermes/uv"
     New-Item -Path $UvDir -ItemType Directory -Force | Out-Null
     Invoke-WebRequest -Uri "https://ghfast.top/https://github.com/astral-sh/uv/releases/download/0.5.13/uv-x86_64-pc-windows-msvc.zip" -OutFile (Join-Path $UvDir "uv.zip")
     Expand-Archive -Path (Join-Path $UvDir "uv.zip") -DestinationPath $UvDir -Force
@@ -107,14 +106,14 @@ $env:UV_PROJECT_ENVIRONMENT = $venvDir
 & $uvExe sync --extra all --index-url https://pypi.mirrors.ustc.edu.cn/simple/
 Pop-Location
 
-# ===================== 自动修复 edge-tts =====================
+# ===================== 修复 edge-tts（100% 不报错） =====================
 Write-Step "Installing edge-tts fix (prevent startup freeze)"
-& "$venvDir\Scripts\pip.exe" install edge-tts -i https://pypi.mirrors.ustc.edu.cn/simple/
-# ==============================================================
+& "$venvDir/Scripts/python.exe" -m pip install edge-tts -i https://pypi.mirrors.ustc.edu.cn/simple/
+# ==========================================================================
 
 # Verify critical imports
 Write-Step "Verifying installation"
-$venvPython = Join-Path $venvDir "Scripts\python.exe"
+$venvPython = Join-Path $venvDir "Scripts/python.exe"
 try {
     & $venvPython -c "import dotenv, openai, rich, prompt_toolkit"
 } catch {
